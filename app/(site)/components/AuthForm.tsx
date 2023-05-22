@@ -8,6 +8,8 @@ import AuthSocialButton from './AuthSocialButton';
 import {BsGithub} from 'react-icons/bs';
 import {BsGoogle} from 'react-icons/bs';
 import axios from 'axios';
+import {toast} from 'react-hot-toast';
+import {signIn} from 'next-auth/react';
 
 type Variant = 'LOGIN' | 'REGISTER';
 
@@ -41,16 +43,43 @@ const AuthForm = () => {
         if(variant==='REGISTER'){
             //Axios Register
             axios.post('/api/register',data)
+            .catch(()=>toast.error('Something went wrong'))
+            .finally(()=>setIsLoading(false));
         }
 
         if(variant==='LOGIN'){
             //NextAuth SignIn
+            signIn('credentials',{
+                ...data,
+                redirect: false,
+            })
+            .then((callback)=>{
+                if(callback?.error){
+                    toast.error('Invalid Credentials');
+                }
+
+                if(callback?.ok && !callback.error){
+                    toast.success('Logged In !');
+                }
+            })
+            .finally(()=>setIsLoading(false));
         }
     }
 
     const socialAction = (action:string)=>{
         setIsLoading(true);
         //NextAuth Social SignIn
+        signIn(action,{redirect: false})
+        .then((callback)=>{
+            if(callback?.error){
+                toast.error('Invalid Credentials');
+            }
+
+            if(callback?.ok && !callback.error){
+                toast.success('Logged In !');
+            }
+        })
+        .finally(()=>setIsLoading(false));
     }
 
     return(
@@ -58,7 +87,7 @@ const AuthForm = () => {
             <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
                 <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                     {variant==='REGISTER' && (
-                        <Input label="Name" id="name" register={register} errors={errors} disabled={isLoading} required/>
+                        <Input label="Name" id="name" register={register} errors={errors} disabled={isLoading}/>
                         )}
                     <Input label="Email address" type="email" id="email" register={register} errors={errors} disabled={isLoading}/>
                     <Input label="Password" type="password" id="password" register={register} errors={errors} disabled={isLoading}/>
